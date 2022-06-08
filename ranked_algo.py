@@ -216,15 +216,32 @@ for code, options in polls_metadata:
         # Create parcats trace
         color = df1.power
 
+        # Capitalize and add space in labels
+        for dim in dims:
+            store = dim['label'].split('_')
+            store[0] = store[0].capitalize()
+            dim['label'] = ' '.join(store)
+
+        # Create figure
         fig = go.Figure(
             data = [go.Parcats(
                 dimensions=dims,
-                line={'color': color, 'colorscale': px.colors.sequential.Inferno},
-                labelfont={'size': 18, 'family': 'Times'},
-                tickfont={'size': 16, 'family': 'Times'},
-                arrangement='freeform')]
+                line={'color': color, 'colorscale': px.colors.sequential.Burgyl, 'shape':'hspline'},
+                counts=df1.power,)]
             )
 
+        fig.update_layout(
+            autosize=True,
+            width=1800,
+            height=1000,
+            margin=dict(
+                l=250,
+                r=250,
+                b=250,
+                t=250,
+                pad=100
+            )
+        )
 
         st.plotly_chart(fig)
     
