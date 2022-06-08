@@ -109,120 +109,126 @@ for code, options in polls_metadata:
         voters.append([voter, dapproval])
     
     df = pd.DataFrame(voters)
-    df.columns =['voter', 'power']
-    print('VOTERS & POWER')
-    print(df)
-    print()
-
-    available_options = list()
-    for voter, user_choices, dapproval in poll_results:
-        for i in user_choices.split(','):
-            if i not in available_options:
-                available_options.append(i)
-    
-    eliminated_options = list()
-
-    poll_algo_rounds = list()
-    for pointer in range(0, len(options_set)):
-
-        # add round (category) column to df
-        df[f'round_{pointer}'] = ''
-        category = f'round_{pointer}'
-        poll_algo_rounds.append(category)
-
-        final_results = dict()
-        final_results.setdefault(str(pointer), {})
-        for i in available_options:
-            if i not in eliminated_options:
-                final_results[str(pointer)].setdefault(str(i), 0)
-
-        print(f"""STARTING ROUND: {pointer}""")
-
-        # counting the support for options
-        for voter, user_choices, dapproval in poll_results:
-            for i in user_choices.split(','):
-                if i not in eliminated_options:
-                    final_results.setdefault(str(pointer), {})
-                    final_results[str(pointer)].setdefault(str(i), 0)
-                    final_results[str(pointer)][str(i)] += dapproval
-
-                    print(options_set[str(i)])
-                    df.at[df.index[df['voter'] == voter][0], category] = options_set[str(i)]
-
-                    break
-
-        # override the 'abstain' option
-        for voter, user_choices, dapproval in poll_results:
-            if len(user_choices.split(',')) == 1 and user_choices.split(',')[0] == '0':
-                df.at[df.index[df['voter'] == voter][0], category] = '0'
-
-        r = list()
-        for option in final_results[str(pointer)]:
-            r.append(final_results[str(pointer)][option])
-        ordered_results = sorted(r)
-
-        for option in final_results[str(pointer)]:
-            if final_results[str(pointer)][option] == ordered_results[0]:
-                if pointer < len(options_set) -1:
-                    print(f"""eliminating least supported option: {option}""")
-                    least_supported_option = option
-                    eliminated_options.append(least_supported_option)
-                    c = 0
-                    while c <= len(available_options) -1:
-                        if str(available_options[c]) == least_supported_option:
-                            available_options.pop(c)
-                        c += 1
-
-        print(f"ROUND {pointer} SUMMARY")
-        for voter, user_choices, dapproval in poll_results:
-            if len(user_choices.split(',')) == 1 and user_choices.split(',')[0] == '0':
-                final_results[str(pointer)]['0'] = 0
-                final_results[str(pointer)]['0'] += dapproval
-
-        print(final_results)
-        print(f"""eliminated options: {eliminated_options}""")
-        print(f"""available options: {available_options}""")
+    if not df.empty:
+        df.columns =['voter', 'power']
+        print('VOTERS & POWER')
+        print(df)
         print()
 
-        pointer += 1
+        available_options = list()
+        for voter, user_choices, dapproval in poll_results:
+            for i in user_choices.split(','):
+                if i not in available_options:
+                    available_options.append(i)
+        
+        eliminated_options = list()
 
-    df_x = df.replace([''], np.nan)
-    df_y = df_x.dropna(how='all', axis=1)
-    df1 = df_y.replace([np.nan], 'No vote')
-    print(df1)
-    print()
+        poll_algo_rounds = list()
+        for pointer in range(0, len(options_set)):
 
-    poll_algo_rounds = list()
-    for i in df1.columns:
-        if i[:6] == 'round_':
-            poll_algo_rounds.append(i)
+            # add round (category) column to df
+            df[f'round_{pointer}'] = ''
+            category = f'round_{pointer}'
+            poll_algo_rounds.append(category)
 
-# VIZ
+            final_results = dict()
+            final_results.setdefault(str(pointer), {})
+            for i in available_options:
+                if i not in eliminated_options:
+                    final_results[str(pointer)].setdefault(str(i), 0)
 
-# # SIMPLIFIED
-# fig = px.parallel_categories(
-#     df1[['voter', 'power'] + poll_algo_rounds],
-#     dimensions=poll_algo_rounds,
-#     color="power",
-#     color_continuous_scale=px.colors.sequential.Inferno
-# )
+            print(f"""STARTING ROUND: {pointer}""")
 
-# EXTENDED
-dims = list()
-for dim in poll_algo_rounds:
-    dims.append(go.parcats.Dimension(values=df1[dim], label=dim))
+            # counting the support for options
+            for voter, user_choices, dapproval in poll_results:
+                for i in user_choices.split(','):
+                    if i not in eliminated_options:
+                        final_results.setdefault(str(pointer), {})
+                        final_results[str(pointer)].setdefault(str(i), 0)
+                        final_results[str(pointer)][str(i)] += dapproval
 
-# Create parcats trace
-color = df1.power
+                        print(options_set[str(i)])
+                        df.at[df.index[df['voter'] == voter][0], category] = options_set[str(i)]
 
-fig = go.Figure(
-    data = [go.Parcats(
-        dimensions=dims,
-        line={'color': color, 'colorscale': px.colors.sequential.Inferno},
-        labelfont={'size': 18, 'family': 'Times'},
-        tickfont={'size': 16, 'family': 'Times'},
-        arrangement='freeform')]
-    )
+                        break
+
+            # override the 'abstain' option
+            for voter, user_choices, dapproval in poll_results:
+                if len(user_choices.split(',')) == 1 and user_choices.split(',')[0] == '0':
+                    df.at[df.index[df['voter'] == voter][0], category] = '0'
+
+            r = list()
+            for option in final_results[str(pointer)]:
+                r.append(final_results[str(pointer)][option])
+            ordered_results = sorted(r)
+
+            for option in final_results[str(pointer)]:
+                if final_results[str(pointer)][option] == ordered_results[0]:
+                    if pointer < len(options_set) -1:
+                        print(f"""eliminating least supported option: {option}""")
+                        least_supported_option = option
+                        eliminated_options.append(least_supported_option)
+                        c = 0
+                        while c <= len(available_options) -1:
+                            if str(available_options[c]) == least_supported_option:
+                                available_options.pop(c)
+                            c += 1
+
+            print(f"ROUND {pointer} SUMMARY")
+            for voter, user_choices, dapproval in poll_results:
+                if len(user_choices.split(',')) == 1 and user_choices.split(',')[0] == '0':
+                    final_results[str(pointer)]['0'] = 0
+                    final_results[str(pointer)]['0'] += dapproval
+
+            print(final_results)
+            print(f"""eliminated options: {eliminated_options}""")
+            print(f"""available options: {available_options}""")
+            print()
+
+            pointer += 1
+
+        df_x = df.replace([''], np.nan)
+        df_y = df_x.dropna(how='all', axis=1)
+        df1 = df_y.replace([np.nan], 'No vote')
+        print(df1)
+        print()
+
+        poll_algo_rounds = list()
+        for i in df1.columns:
+            if i[:6] == 'round_':
+                poll_algo_rounds.append(i)
+
+        # VIZ
+
+        # # SIMPLIFIED
+        # fig = px.parallel_categories(
+        #     df1[['voter', 'power'] + poll_algo_rounds],
+        #     dimensions=poll_algo_rounds,
+        #     color="power",
+        #     color_continuous_scale=px.colors.sequential.Inferno
+        # )
+
+        # EXTENDED
+        dims = list()
+        for dim in poll_algo_rounds:
+            dims.append(go.parcats.Dimension(values=df1[dim], label=dim))
+
+        # Create parcats trace
+        color = df1.power
+
+        fig = go.Figure(
+            data = [go.Parcats(
+                dimensions=dims,
+                line={'color': color, 'colorscale': px.colors.sequential.Inferno},
+                labelfont={'size': 18, 'family': 'Times'},
+                tickfont={'size': 16, 'family': 'Times'},
+                arrangement='freeform')]
+            )
 
 
-st.plotly_chart(fig)
+        st.plotly_chart(fig)
+    
+    else:
+        """
+            POLL DIDN'T END YET OR DOESN'T EXIST
+        """
