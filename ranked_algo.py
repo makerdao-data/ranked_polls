@@ -27,6 +27,7 @@ conn = snowflake.connector.connect(
                 port=443
                 )
 
+
 # Create a cursor object.
 cur = conn.cursor()
 conn.cursor().execute("USE ROLE ETL")
@@ -37,45 +38,45 @@ r = requests.get(url)
 res = r.json()
 polls = res['polls']
 
-ranked_polls = []
+ranked_polls = {}
 for poll in polls:
     if poll['voteType'] == 'Ranked Choice IRV':
-        ranked_polls.append(str(poll['pollId']))
+        ranked_polls[poll['title']] = poll['pollId']
+ranked_polls = {k: v for k, v in sorted(ranked_polls.items(), key=lambda item: item[1], reverse=True)}
 
-# ranked_polls = ['735', '705', '691', '609', '574', '510', '501', '502', '497', '498', '463', '465', '379', '380', '373', '328', '325', '323', '303', '285', '295', '297', '281', '279', '273', '258', '249', '248', '244', '240', '241', '219', '217', '218', '215', '206', '207', '194', '186', '165']
-# ranked_polls = ['691']
-
-"""
-    RANKED POLL VOTES FLOW
-"""
+st.title("Ranked Poll Sentiment Simulation")
 
 option = st.selectbox(
-     'PICK THE POLL',
-     ranked_polls)
+     'Select a poll',
+     ranked_polls.keys()
+)
 
-st.write('SELECTED POLL:', option)
+st.write("Selected poll:", ranked_polls[option])
 
-# ranked_polls_lookup = ','.join([f"'{poll}'" for poll in ranked_polls])
-# print(ranked_polls_lookup)
-
-# Get options forom yays table
 polls_metadata = cur.execute(f"""
     select code, parse_json(options)::string as options
     from mcd.internal.yays
     where type = 'poll'
-    and code in ('{option}');
+    and code in ('{ranked_polls[option]}');
 """).fetchall()
-
 
 for code, options in polls_metadata:
 
+    # Get options forom yays table
+    poll_metadata = cur.execute(f"""
+        select code, parse_json(options)::string as options
+        from mcd.internal.yays
+        where type = 'poll'
+        and code = '{code}';
+    """).fetchall()
+
     # get total voting power of voters that took part in the poll
     total_votes_weight = cur.execute(f"""
-        select sum(dapproval)
+        select sum(dapproval) from (select distinct voter, last_value(dapproval) over (partition by voter order by timestamp) as dapproval
         from mcd.public.votes
-        where yay = '{code}' and
-        operation = 'FINAL_CHOICE';
-    """).fetchone()[0]
+        where yay = '{code}')
+    """).fetchall()[0]
+
 
     options_set = json.loads(options)
     options_layout = dict()
@@ -83,10 +84,9 @@ for code, options in polls_metadata:
         options_layout.setdefault(option, 0)
 
     poll_results = cur.execute(f"""
-        select voter, option, dapproval
-        from mcd.public.votes
-        where yay = '{code}' and
-        operation = 'FINAL_CHOICE';
+        select distinct voter, option, last_value(dapproval) over (partition by voter order by timestamp) as dapproval
+        from mcd.public.votes 
+        where yay = '{code}';
     """).fetchall()
 
     # create round schema & append options layout to every round
@@ -107,7 +107,7 @@ for code, options in polls_metadata:
     voters = list()
     for voter, user_choices, dapproval in poll_results:
         voters.append([voter, dapproval])
-    
+
     df = pd.DataFrame(voters)
     if not df.empty:
         df.columns =['voter', 'power']
@@ -120,7 +120,7 @@ for code, options in polls_metadata:
             for i in user_choices.split(','):
                 if i not in available_options:
                     available_options.append(i)
-        
+
         eliminated_options = list()
 
         poll_algo_rounds = list()
@@ -189,7 +189,7 @@ for code, options in polls_metadata:
 
         df_x = df.replace([''], np.nan)
         df_y = df_x.dropna(how='all', axis=1)
-        df1 = df_y.replace([np.nan], 'No vote')
+        df1 = df_y.replace([np.nan], 'Discarded votes')
         print(df1)
         print()
 
@@ -199,14 +199,7 @@ for code, options in polls_metadata:
                 poll_algo_rounds.append(i)
 
         # VIZ
-
-        # # SIMPLIFIED
-        # fig = px.parallel_categories(
-        #     df1[['voter', 'power'] + poll_algo_rounds],
-        #     dimensions=poll_algo_rounds,
-        #     color="power",
-        #     color_continuous_scale=px.colors.sequential.Inferno
-        # )
+        df1.sort_values(by='power', ascending=False, inplace=True)
 
         # EXTENDED
         dims = list()
@@ -219,15 +212,15 @@ for code, options in polls_metadata:
         # Capitalize and add space in labels
         for dim in dims:
             store = dim['label'].split('_')
-            store[0] = store[0].capitalize()
-            dim['label'] = ' '.join(store)
+            dim['label'] = ' '.join([store[0].capitalize(), str(int(store[1]) + 1)])
 
         # Create figure
         fig = go.Figure(
             data = [go.Parcats(
                 dimensions=dims,
                 line={'color': color, 'colorscale': px.colors.sequential.Burgyl, 'shape':'hspline'},
-                counts=df1.power,)]
+                counts=df1.power,
+                hoveron='dimension',)]
             )
 
         fig.update_layout(
@@ -239,12 +232,12 @@ for code, options in polls_metadata:
                 r=250,
                 b=250,
                 t=250,
-                pad=100
+                pad=400
             )
         )
 
         st.plotly_chart(fig)
-    
+
     else:
         """
             POLL DIDN'T END YET OR DOESN'T EXIST
