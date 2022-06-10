@@ -77,7 +77,6 @@ for code, options in polls_metadata:
         where yay = '{code}')
     """).fetchall()[0]
 
-
     options_set = json.loads(options)
     options_layout = dict()
     for option in options_set:
@@ -111,9 +110,7 @@ for code, options in polls_metadata:
     df = pd.DataFrame(voters)
     if not df.empty:
         df.columns =['voter', 'power']
-        print('VOTERS & POWER')
-        print(df)
-        print()
+        print(f"VOTERS & POWER\n{df}")
 
         available_options = list()
         for voter, user_choices, dapproval in poll_results:
@@ -137,7 +134,7 @@ for code, options in polls_metadata:
                 if i not in eliminated_options:
                     final_results[str(pointer)].setdefault(str(i), 0)
 
-            print(f"""STARTING ROUND: {pointer}""")
+            print(f"STARTING ROUND: {pointer}")
 
             # counting the support for options
             for voter, user_choices, dapproval in poll_results:
@@ -165,7 +162,7 @@ for code, options in polls_metadata:
             for option in final_results[str(pointer)]:
                 if final_results[str(pointer)][option] == ordered_results[0]:
                     if pointer < len(options_set) -1:
-                        print(f"""eliminating least supported option: {option}""")
+                        print(f"eliminating least supported option: {option}")
                         least_supported_option = option
                         eliminated_options.append(least_supported_option)
                         c = 0
@@ -180,18 +177,14 @@ for code, options in polls_metadata:
                     final_results[str(pointer)]['0'] = 0
                     final_results[str(pointer)]['0'] += dapproval
 
-            print(final_results)
-            print(f"""eliminated options: {eliminated_options}""")
-            print(f"""available options: {available_options}""")
-            print()
+            print(f"{final_results}\neliminated options: {eliminated_options}\navailable options: {available_options}")
 
             pointer += 1
-
-        df_x = df.replace([''], np.nan)
-        df_y = df_x.dropna(how='all', axis=1)
-        df1 = df_y.replace([np.nan], 'Discarded votes')
+    
+        df1 = df.replace('', np.nan).dropna(how='all', axis=1).replace(np.nan, 'Discarded votes')
+        df1.sort_values(by='power', ascending=False, inplace=True)
+        df1 = df1.T.drop_duplicates().T
         print(df1)
-        print()
 
         poll_algo_rounds = list()
         for i in df1.columns:
@@ -199,7 +192,6 @@ for code, options in polls_metadata:
                 poll_algo_rounds.append(i)
 
         # VIZ
-        df1.sort_values(by='power', ascending=False, inplace=True)
 
         # EXTENDED
         dims = list()
@@ -219,7 +211,7 @@ for code, options in polls_metadata:
             data = [go.Parcats(
                 dimensions=dims,
                 line={'color': color, 'colorscale': px.colors.sequential.Burgyl, 'shape':'hspline'},
-                counts=df1.power,
+                counts=[np.float64(i) for i in df1.power],
                 hoveron='dimension',)]
             )
 
