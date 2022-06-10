@@ -1,8 +1,8 @@
-mkdir -p ~/.ranked_algo/
+mkdir -p ~/.ranked-polls/
 
 echo "\
 [server]\n\
 headless = true\n\
 enableCORS=false\n\
 port = $PORT\n\
-" > ~/.ranked_algo/config.toml
+" > ~/.ranked-polls/config.toml
