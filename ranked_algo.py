@@ -152,7 +152,7 @@ for code, options in polls_metadata:
             # override the 'abstain' option
             for voter, user_choices, dapproval in poll_results:
                 if len(user_choices.split(',')) == 1 and user_choices.split(',')[0] == '0':
-                    df.at[df.index[df['voter'] == voter][0], category] = '0'
+                    df.at[df.index[df['voter'] == voter][0], category] = options_set['0']
 
             r = list()
             for option in final_results[str(pointer)]:
