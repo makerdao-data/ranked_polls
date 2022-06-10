@@ -1,8 +1,8 @@
-mkdir -p ~/.ranked-polls/
+mkdir -p ~/.streamlit/
 
 echo "\
 [server]\n\
 headless = true\n\
 enableCORS=false\n\
 port = $PORT\n\
-" > ~/.ranked-polls/config.toml
+" > ~/.streamlit/config.toml
