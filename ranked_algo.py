@@ -1,4 +1,5 @@
 import os
+from re import X
 from dotenv import load_dotenv
 import snowflake.connector
 import json
@@ -44,7 +45,8 @@ for poll in polls:
         ranked_polls[poll['title']] = poll['pollId']
 ranked_polls = {k: v for k, v in sorted(ranked_polls.items(), key=lambda item: item[1], reverse=True)}
 
-st.title("Ranked Poll Sentiment Simulation")
+st.title("Ranked Poll Simulation")
+st.write("This app simulates the Instant Runoff Voting algorithm for ranked polls. Showing how choices compete against each other. \n The intent is to help voters when ranking choices in Priotization Sentiment polls.")
 
 option = st.selectbox(
      'Select a poll',
@@ -149,10 +151,10 @@ for code, options in polls_metadata:
 
                         break
 
-            # override the 'abstain' option
-            for voter, user_choices, dapproval in poll_results:
-                if len(user_choices.split(',')) == 1 and user_choices.split(',')[0] == '0':
-                    df.at[df.index[df['voter'] == voter][0], category] = options_set['0']
+            # override the 'abstain' option. Currently disabled.
+            # for voter, user_choices, dapproval in poll_results:
+            #     if len(user_choices.split(',')) == 1 and user_choices.split(',')[0] == '0':
+            #         df.at[df.index[df['voter'] == voter][0], category] = options_set['0']
 
             r = list()
             for option in final_results[str(pointer)]:
@@ -183,7 +185,7 @@ for code, options in polls_metadata:
     
         df1 = df.replace('', np.nan).dropna(how='all', axis=1).replace(np.nan, 'Discarded votes')
         df1.sort_values(by='power', ascending=False, inplace=True)
-        df1 = df1.T.drop_duplicates().T
+        #df1 = df1.T.drop_duplicates().T
         print(df1)
 
         poll_algo_rounds = list()
@@ -215,22 +217,30 @@ for code, options in polls_metadata:
                 hoveron='dimension',)]
             )
 
-        fig.update_layout(
-            autosize=True,
-            width=1800,
-            height=1000,
-            margin=dict(
-                l=250,
-                r=250,
-                b=250,
-                t=250,
-                pad=400
-            )
-        )
+        # Modify sizing
+        # Deprecated in favour of st.plotly_chart(use_container_width=True))
+        # fig.update_layout(
+        #     autosize=True,
+        #     width=1800,
+        #     height=1000,
+        #     margin=dict(
+        #         l=250,
+        #         r=250,
+        #         b=250,
+        #         t=250,
+        #         pad=400
+        #     )
+        # )
 
-        st.plotly_chart(fig)
+        st.plotly_chart(fig, use_container_width=True)
+
+        # Table with final ranked choices
+        
+
+        st.caption("Built by Data Insights with the support of GovAlpha & DUX.")
+        st.caption("[Prioritization Framework forum post](https://forum.makerdao.com/t/prioritization-framework-sentiment-polling/15554)")
+        
+        st.info("Upcoming improvements: \n 1. User input of votes \n 2. Exclude *Abstain* from calculations \n 3. Split app between sentiment & non-sentiment polls")
 
     else:
-        """
-            POLL DIDN'T END YET OR DOESN'T EXIST
-        """
+        st.error("There was an issue retrieving the poll results. It could be that the poll does not have enough votes to display, or something much much worse has happened.")
