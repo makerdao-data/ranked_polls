@@ -195,7 +195,7 @@ for code, options in polls_metadata:
 
         # VIZ
 
-        # EXTENDED
+        # Create visualization dimensions
         dims = list()
         for dim in poll_algo_rounds:
             dims.append(go.parcats.Dimension(values=df1[dim], label=dim))
@@ -232,14 +232,16 @@ for code, options in polls_metadata:
         #     )
         # )
 
+        # Display 'fig' plotly chart
         st.plotly_chart(fig, use_container_width=True)
 
-        # Table with final ranked choices
+        # Final vote prioritization table
+        st.write("Final vote prioritization (descending).")
+        st.table(df1.iloc[:, -1].unique())
         
-
+        # Text feeds
         st.caption("Built by Data Insights with the support of GovAlpha & DUX.")
         st.caption("[Prioritization Framework forum post](https://forum.makerdao.com/t/prioritization-framework-sentiment-polling/15554)")
-        
         st.info("Upcoming improvements: \n 1. User input of votes \n 2. Exclude *Abstain* from calculations \n 3. Split app between sentiment & non-sentiment polls")
 
     else:
