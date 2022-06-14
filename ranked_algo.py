@@ -64,7 +64,7 @@ polls_metadata = cur.execute(f"""
 
 for code, options in polls_metadata:
 
-    # Get options forom yays table
+    # Get options from yays table
     poll_metadata = cur.execute(f"""
         select code, parse_json(options)::string as options
         from mcd.internal.yays
@@ -74,7 +74,7 @@ for code, options in polls_metadata:
 
     # get total voting power of voters that took part in the poll
     total_votes_weight = cur.execute(f"""
-        select sum(dapproval) from (select distinct voter, last_value(dapproval) over (partition by voter order by timestamp) as dapproval
+        select sum(dapproval) from (select distinct voter, last_value(dapproval) over (partition by voter order by order_index) as dapproval
         from mcd.public.votes
         where yay = '{code}')
     """).fetchall()[0]
@@ -85,10 +85,24 @@ for code, options in polls_metadata:
         options_layout.setdefault(option, 0)
 
     poll_results = cur.execute(f"""
-        select distinct voter, option, last_value(dapproval) over (partition by voter order by timestamp) as dapproval
+        select distinct voter, option, last_value(dapproval) over (partition by voter order by order_index) as dapproval
         from mcd.public.votes 
         where yay = '{code}';
     """).fetchall()
+
+    # clean duplicated voting
+    poll_results_dict = {}
+    for voter, option, dapproval in poll_results:
+        poll_results_dict[voter] = {}
+        poll_results_dict[voter] = dict(
+            option=option,
+            dapproval=dapproval
+        )
+    
+    poll_results = []
+    for voter in poll_results_dict:
+        poll_results.append([voter, poll_results_dict[voter]['option'], poll_results_dict[voter]['dapproval']])
+
 
     # create round schema & append options layout to every round
     # options layout: all possible options to pick for poll
@@ -235,13 +249,29 @@ for code, options in polls_metadata:
         # Display 'fig' plotly chart
         st.plotly_chart(fig, use_container_width=True)
 
+        st.caption("**Count**: total MKR support, **Discarded votes**: votes with all their ranked options eliminated")
+
         # Final vote prioritization table
-        st.write("Final vote prioritization (descending).")
-        st.table(df1.iloc[:, -1].unique())
-        
+        st.write("**Final ranking**")
+
+        final_options = (eliminated_options + available_options)[::-1]
+        table_final_options = [options_set[i] for i in final_options]
+        df_options = pd.DataFrame(table_final_options, columns=["Option"])
+        df_options.index += 1 
+        #df_options.rename(columns = {' ':'Ranking', '0':'Option'}, inplace = True)
+
+        st.dataframe(df_options)
+
+        #style = df_options.style #.hide_index()
+        #style.hide_columns()
+        #st.write(style.to_html(), unsafe_allow_html=True)
+
+
+
         # Text feeds
-        st.caption("Built by Data Insights with the support of GovAlpha & DUX.")
-        st.caption("[Prioritization Framework forum post](https://forum.makerdao.com/t/prioritization-framework-sentiment-polling/15554)")
+        st.write(" ")
+        st.write(" ")
+        st.write("Built by Data Insights with the support of GovAlpha & DUX. Read more about here [Prioritization Framework forum post](https://forum.makerdao.com/t/prioritization-framework-sentiment-polling/15554)")
         st.info("Upcoming improvements: \n 1. User input of votes \n 2. Exclude *Abstain* from calculations \n 3. Split app between sentiment & non-sentiment polls")
 
     else:
