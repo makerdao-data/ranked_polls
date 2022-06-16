@@ -124,7 +124,7 @@ for code, options in polls_metadata:
         voters.append([voter, dapproval])
 
     df = pd.DataFrame(voters)
-    if not df.empty:
+    if ((not df.empty) & (not (df[1]< 0).any())):
         df.columns =['voter', 'power']
         print(f"VOTERS & POWER\n{df}")
 
