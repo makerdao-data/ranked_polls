@@ -1,6 +1,6 @@
 import os
 from re import X
-from typing import Dict, List
+from typing import Any, Dict, List, Tuple
 from dotenv import load_dotenv
 import snowflake.connector
 import json
@@ -90,7 +90,7 @@ def fetch_poll_list() -> Dict[str, str]:
 
     return ranked_polls
 
-def fetch_poll_data(cur, option: int) -> List[List[tuple]]:
+def fetch_poll_data(cur, option: int) -> Tuple[List[Tuple[Any]]]:
     """
     Fetch necessary poll data
     """
@@ -156,15 +156,15 @@ def poll_iter(poll_metadata: list, total_votes_weight: list, poll_results: list)
     # Log for debugging
     print(f"VOTERS & POWER\n{df}")
 
-    available_options = list()
-    for voter, user_choices, dapproval in poll_results:
-        for i in user_choices.split(','):
-            if i not in available_options:
-                available_options.append(i)
+    # Create list of available ptions
+    available_options = list({result for results in [poll_result[1].split(',') for poll_result in poll_results] for result in results})
 
-    eliminated_options = list()
+    # Create list storage of eliminated options
+    eliminated_options = []
 
-    poll_algo_rounds = list()
+    # Create list storage for poll rounds
+    poll_algo_rounds = []
+    
     for pointer in range(0, len(options_set)):
 
         # add round (category) column to df
