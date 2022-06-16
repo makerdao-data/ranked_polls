@@ -113,11 +113,14 @@ def poll_iter(poll_metadata: list, total_votes_weight: list, poll_results: list)
     Generate result dataframe
     """
 
+    # Create options set
+    options_set = json.loads(poll_metadata[1])
+
     # Create template of options
-    options_layout = {k: v for v, k in enumerate(json.loads(poll_metadata[1]))}
+    options_layout = {k: v for v, k in enumerate(options_set)}
 
     # Create round schema & append options layout to every round
-    rounds = {str(round): options_layout for round in range(len(options_layout))}
+    rounds = {round: options_layout for round in range(len(options_layout))}
 
     # Populate rounds dictionary
     for _, options, dapproval in poll_results:
@@ -156,7 +159,7 @@ def poll_iter(poll_metadata: list, total_votes_weight: list, poll_results: list)
     poll_algo_rounds = []
     
     # Iterate through poll_metadata and populate df
-    for pointer in range(len(json.loads(poll_metadata[1]))):
+    for pointer in range(len(options_set)):
 
         # Create f-string of round title for future referencing
         round_title = f"Round {str(pointer + 1)}"
@@ -170,15 +173,16 @@ def poll_iter(poll_metadata: list, total_votes_weight: list, poll_results: list)
         # Log round iteration start
         print(f"STARTING ROUND: {pointer}")
 
-        # Counting the support for options
-        for _, options, dapproval in poll_results:
+        # Calculate the support for options
+        for voter, options, dapproval in poll_results:
             for option in list(map(int, option.split(','))):
                 if option not in eliminated_options:
-                    final_results.setdefault(pointer, {})
-                    final_results[pointer].setdefault(option, 0)
-                    final_results[pointer][i] += dapproval
+                    # final_results.setdefault(pointer, {})
+                    # final_results[pointer].setdefault(option, 0)
+                    # final_results[pointer][option] += dapproval
 
-                    df.at[df.index[df['voter'] == voter][0], category] = options_set[str(i)]
+                    final_results[pointer] = {option: (final_results[pointer].get(option, 0) + dapproval)}
+                    df.at[df.index[df['voter'] == voter][0], round_title] = options_set[i]
 
         # override the 'abstain' option. Currently disabled.
         # for voter, user_choices, dapproval in poll_results:
@@ -277,5 +281,4 @@ st.caption("Built by Data Insights with the support of GovAlpha & DUX.")
 st.caption("[Prioritization Framework forum post](https://forum.makerdao.com/t/prioritization-framework-sentiment-polling/15554)")
 st.info("Upcoming improvements: \n 1. User input of votes \n 2. Exclude *Abstain* from calculations \n 3. Split app between sentiment & non-sentiment polls")
 
-else:
 st.error("There was an issue retrieving the poll results. It could be that the poll does not have enough votes to display, or something much much worse has happened.")
