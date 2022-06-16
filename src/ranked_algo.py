@@ -12,19 +12,7 @@ import numpy as np
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
-
-class Error(Exception):
-    """Base class for other exceptions"""
-    pass
-
-
-class EmptyPollError(Error):
-    """Raised when a poll dataframe is empty"""
-    pass
-
-class NegativeDapprovalError(Exception):
-    """Raised when negative values are found in dapproval data"""
-    pass
+from objects.errors import EmptyPollError, NegativeDapprovalError
 
 # Set streamlit page layout/orientation to 'wide' 
 st.set_page_config(layout="wide")
@@ -132,10 +120,10 @@ def poll_iter(poll_metadata: list, total_votes_weight: list, poll_results: list)
     rounds = {str(round): options_layout for round in range(len(options_layout))}
 
     # Populate rounds dictionary
-    for _, option, dapproval in poll_results:
-        user_ranked_choices = option.split(',')
+    for _, options, dapproval in poll_results:
+        user_ranked_choices = list(map(int, options.split(',')))
         for idx, selection in enumerate(user_ranked_choices):
-            rounds[str(idx)][str(user_ranked_choices[idx])] += dapproval
+            rounds[idx][user_ranked_choices[idx]] += dapproval
 
     # Create list of [voter, dapproval] from poll_results
     voters = [[voter, dapproval] for voter, _, dapproval in poll_results]
@@ -157,7 +145,9 @@ def poll_iter(poll_metadata: list, total_votes_weight: list, poll_results: list)
     print(f"VOTERS & POWER\n{df}")
 
     # Create list of available ptions
-    available_options = list({result for results in [poll_result[1].split(',') for poll_result in poll_results] for result in results})
+    available_options = list(
+        {int(result) for results in [poll_result[1].split(',') for poll_result in poll_results] for result in results}
+    )
 
     # Create list storage of eliminated options
     eliminated_options = []
@@ -165,33 +155,30 @@ def poll_iter(poll_metadata: list, total_votes_weight: list, poll_results: list)
     # Create list storage for poll rounds
     poll_algo_rounds = []
     
-    for pointer in range(0, len(options_set)):
+    # Iterate through poll_metadata and populate df
+    for pointer in range(len(json.loads(poll_metadata[1]))):
 
-        # add round (category) column to df
-        df[f'round_{pointer}'] = ''
-        category = f'round_{pointer}'
-        poll_algo_rounds.append(category)
+        # Create f-string of round title for future referencing
+        round_title = f"Round {str(pointer + 1)}"
 
-        final_results = dict()
-        final_results.setdefault(str(pointer), {})
-        for i in available_options:
-            if i not in eliminated_options:
-                final_results[str(pointer)].setdefault(str(i), 0)
+        # Add round column to df
+        df[round_title] = ''
+        
+        # Dictionary storage of final results
+        final_results = {pointer: {i: 0 for i in available_options if i not in eliminated_options}}
 
+        # Log round iteration start
         print(f"STARTING ROUND: {pointer}")
 
-        # counting the support for options
-        for voter, user_choices, dapproval in poll_results:
-            for i in user_choices.split(','):
-                if i not in eliminated_options:
-                    final_results.setdefault(str(pointer), {})
-                    final_results[str(pointer)].setdefault(str(i), 0)
-                    final_results[str(pointer)][str(i)] += dapproval
+        # Counting the support for options
+        for _, options, dapproval in poll_results:
+            for option in list(map(int, option.split(','))):
+                if option not in eliminated_options:
+                    final_results.setdefault(pointer, {})
+                    final_results[pointer].setdefault(option, 0)
+                    final_results[pointer][i] += dapproval
 
-                    print(options_set[str(i)])
                     df.at[df.index[df['voter'] == voter][0], category] = options_set[str(i)]
-
-                    break
 
         # override the 'abstain' option. Currently disabled.
         # for voter, user_choices, dapproval in poll_results:
@@ -225,21 +212,24 @@ def poll_iter(poll_metadata: list, total_votes_weight: list, poll_results: list)
 
         pointer += 1
 
-    df1 = df.replace('', np.nan).dropna(how='all', axis=1).replace(np.nan, 'Discarded votes')
-    df1.sort_values(by='power', ascending=False, inplace=True)
-    #df1 = df1.T.drop_duplicates().T
-    print(df1)
+    df = df.replace(
+            '', np.nan
+        ).dropna(
+            how='all', axis=1
+        ).replace(
+            np.nan, 'Discarded votes'
+        ).sort_values(
+            by='power', ascending=False
+    )
+    
+    return df
 
-    poll_algo_rounds = list()
-    for i in df1.columns:
-        if i[:6] == 'round_':
-            poll_algo_rounds.append(i)
 
 # VIZ
 
 # Create visualization dimensions
 dims = list()
-for dim in poll_algo_rounds:
+for dim in df[df.columns[2:]]:
     dims.append(go.parcats.Dimension(values=df1[dim], label=dim))
 
 # Create parcats trace
