@@ -1,5 +1,6 @@
 import json
 import requests
+from streamlit import cache
 from typing import Any, Dict, List, Tuple
 
 def fetch_poll_list() -> Dict[str, str]:
@@ -42,13 +43,6 @@ def fetch_poll_data(cur, option: int) -> Tuple[List[Tuple[Any]]]:
         and code in ('{option}');
     """).fetchall()
 
-    # Get total voting power of voters that took part in the poll
-    total_votes_weight = cur.execute(f"""
-        select sum(dapproval) from (select distinct voter, last_value(dapproval) over (partition by voter order by timestamp) as dapproval
-        from mcd.public.votes
-        where yay = '{option}')
-    """).fetchall()[0]
-
     # Fetch polling results
     poll_results = cur.execute(f"""
         select distinct voter, option, last_value(dapproval) over (partition by voter order by timestamp) as dapproval
@@ -56,4 +50,4 @@ def fetch_poll_data(cur, option: int) -> Tuple[List[Tuple[Any]]]:
         where yay = '{option}';
     """).fetchall()
 
-    return (poll_metadata, total_votes_weight, poll_results)
+    return (poll_metadata, poll_results)

@@ -1,12 +1,13 @@
 import json
 import pandas as pd
+from streamlit import cache
 from numpy import nan
 from typing import Tuple
-from ..objects.errors import EmptyPollError, NegativeDapprovalError
+from objects.errors import EmptyPollError, NegativeDapprovalError
 
 def poll_iter(poll_metadata: list, poll_results: list) -> Tuple[pd.DataFrame]:
     """
-    Generate result dataframe
+    Generate voting result dataframe
     """
 
     # Create options set
@@ -82,7 +83,7 @@ def poll_iter(poll_metadata: list, poll_results: list) -> Tuple[pd.DataFrame]:
 
         # Create list of ordered results
         ordered_results = [option for option in sorted(final_results[pointer].values())]
-        print(ordered_results)
+
         # Iterate through final results
         for option in final_results[pointer]:
             # What exactly is this code block doing?
