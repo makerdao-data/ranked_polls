@@ -8,19 +8,22 @@ def load_connection() -> snowflake.connector.cursor.SnowflakeCursor:
     """
 
     # Load environment variables and create sf connection
-    load_dotenv()
+    SNOWFLAKE_USERNAME='LEO'
+    SNOWFLAKE_PASSWORD='M4k3th15'
+    SNOWFLAKE_HOST='zua82120.us-east-1'
+    SNOWFLAKE_ACCOUNT='zua82120'
+    SNOWFLAKE_WAREHOUSE='COMPUTE_WH'
+    SNOWFLAKE_ROLE='SYSADMIN'
+    MAIN_DB='MCD'
     conn = snowflake.connector.connect(
-                    user=os.getenv("SNOWFLAKE_USERNAME"),
-                    password=os.getenv("SNOWFLAKE_PASSWORD"),
-                    account=os.getenv("SNOWFLAKE_HOST"),
-                    role=os.getenv("SNOWFLAKE_ROLE"),
-                    warehouse=os.getenv("SNOWFLAKE_WAREHOUSE"),
-                    database='TOKEN_FLOW',
-                    schema='DICU',
-                    protocol='https',
-                    port=443
-                    )
-
+        account=SNOWFLAKE_HOST,
+        user=SNOWFLAKE_USERNAME,
+        password=SNOWFLAKE_PASSWORD,
+        warehouse=SNOWFLAKE_WAREHOUSE,
+        role=SNOWFLAKE_ROLE,
+        port=443,
+        protocol='https'
+    )
 
     # Create a cursor object.
     cur = conn.cursor()
