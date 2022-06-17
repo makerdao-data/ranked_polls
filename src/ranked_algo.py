@@ -54,7 +54,7 @@ st.write("Selected poll:", ranked_polls[option])
 
 def fetch_poll_list() -> Dict[str, str]:
     """
-    Fetched list 
+    Fetch list of polls
     """
     
     # Get ranked_polls from GovAlpha/DUX
@@ -77,6 +77,7 @@ def fetch_poll_list() -> Dict[str, str]:
     ranked_polls = dict(sorted(ranked_polls.items(), key=lambda item: item[1], reverse=True))
 
     return ranked_polls
+
 
 def fetch_poll_data(cur, option: int) -> Tuple[List[Tuple[Any]]]:
     """
@@ -108,19 +109,19 @@ def fetch_poll_data(cur, option: int) -> Tuple[List[Tuple[Any]]]:
     return (poll_metadata, total_votes_weight, poll_results)
 
 
-def poll_iter(poll_metadata: list, total_votes_weight: list, poll_results: list) -> pd.DataFrame:
+def poll_iter(poll_metadata: list, poll_results: list) -> pd.DataFrame:
     """
     Generate result dataframe
     """
 
     # Create options set
-    options_set = json.loads(poll_metadata[1])
+    options_set = {int(k): v for k, v in json.loads(poll_metadata[0][1]).items()}
 
     # Create template of options
     options_layout = {k: v for v, k in enumerate(options_set)}
 
     # Create round schema & append options layout to every round
-    rounds = {round: options_layout for round in range(len(options_layout))}
+    rounds = {rnd: options_layout for rnd in range(len(options_layout))}
 
     # Populate rounds dictionary
     for _, options, dapproval in poll_results:
@@ -133,21 +134,16 @@ def poll_iter(poll_metadata: list, total_votes_weight: list, poll_results: list)
 
     # Create dataframe of voters
     df = pd.DataFrame(voters)
+    df.rename(columns={0:'voter', 1:'power'}, inplace=True)
 
     # Raise error if poll data is empty
     if df.empty:
         raise EmptyPollError
     # Raise error if negative values are found in dapproval column
-    elif (df[1]< 0).any():
+    elif (df['power']< 0).any():
         raise NegativeDapprovalError
 
-    # Rename dataframe columns
-    df.rename(columns=['voter', 'power'], inplace=True)
-
-    # Log for debugging
-    print(f"VOTERS & POWER\n{df}")
-
-    # Create list of available ptions
+    # Create list of available options
     available_options = list(
         {int(result) for results in [poll_result[1].split(',') for poll_result in poll_results] for result in results}
     )
@@ -169,53 +165,45 @@ def poll_iter(poll_metadata: list, total_votes_weight: list, poll_results: list)
         
         # Dictionary storage of final results
         final_results = {pointer: {i: 0 for i in available_options if i not in eliminated_options}}
-
-        # Log round iteration start
-        print(f"STARTING ROUND: {pointer}")
-
+        
         # Calculate the support for options
         for voter, options, dapproval in poll_results:
-            for option in list(map(int, option.split(','))):
+            # Iterate through split options
+            for option in list(map(int, options.split(','))):
                 if option not in eliminated_options:
-                    # final_results.setdefault(pointer, {})
-                    # final_results[pointer].setdefault(option, 0)
-                    # final_results[pointer][option] += dapproval
-
-                    final_results[pointer] = {option: (final_results[pointer].get(option, 0) + dapproval)}
-                    df.at[df.index[df['voter'] == voter][0], round_title] = options_set[i]
+                    # Populate final_results
+                    final_results.setdefault(pointer, {})
+                    final_results[pointer].setdefault(option, 0)
+                    final_results[pointer][option] += dapproval
+                    # Populate result df
+                    df.at[df.index[df['voter'] == voter][0], round_title] = options_set[option]
+                    # Exit loop
+                    break
 
         # override the 'abstain' option. Currently disabled.
         # for voter, user_choices, dapproval in poll_results:
         #     if len(user_choices.split(',')) == 1 and user_choices.split(',')[0] == '0':
         #         df.at[df.index[df['voter'] == voter][0], category] = options_set['0']
 
-        r = list()
-        for option in final_results[str(pointer)]:
-            r.append(final_results[str(pointer)][option])
-        ordered_results = sorted(r)
+        # Create list of ordered results
+        ordered_results = [option for option in sorted(final_results[pointer].values())]
+        print(ordered_results)
+        # Iterate through final results
+        for option in final_results[pointer]:
+            # What exactly is this code block doing?
+            if final_results[pointer][option] == ordered_results[0]:
+                if pointer < (len(options_set) - 1):
+                    eliminated_options.append(option)
+                    for available_option in available_options:
+                        if available_option == option:
+                            del(available_option)
 
-        for option in final_results[str(pointer)]:
-            if final_results[str(pointer)][option] == ordered_results[0]:
-                if pointer < len(options_set) -1:
-                    print(f"eliminating least supported option: {option}")
-                    least_supported_option = option
-                    eliminated_options.append(least_supported_option)
-                    c = 0
-                    while c <= len(available_options) -1:
-                        if str(available_options[c]) == least_supported_option:
-                            available_options.pop(c)
-                        c += 1
+        # If the only option selected was one zero, populate final_results with this
+        for _, user_choices, dapproval in poll_results:
+            if len(user_choices.split(',')) == 1 and user_choices.split(',')[0] == 0:
+                final_results[pointer][0] = (final_results[pointer].get(0,0) + dapproval)
 
-        print(f"ROUND {pointer} SUMMARY")
-        for voter, user_choices, dapproval in poll_results:
-            if len(user_choices.split(',')) == 1 and user_choices.split(',')[0] == '0':
-                final_results[str(pointer)]['0'] = 0
-                final_results[str(pointer)]['0'] += dapproval
-
-        print(f"{final_results}\neliminated options: {eliminated_options}\navailable options: {available_options}")
-
-        pointer += 1
-
+    # Final df formatting
     df = df.replace(
             '', np.nan
         ).dropna(
@@ -224,8 +212,10 @@ def poll_iter(poll_metadata: list, total_votes_weight: list, poll_results: list)
             np.nan, 'Discarded votes'
         ).sort_values(
             by='power', ascending=False
+        ).reset_index(
+            drop=True
     )
-    
+
     return df
 
 
@@ -273,7 +263,7 @@ st.plotly_chart(fig, use_container_width=True)
 
 # Final vote prioritization table
 st.write("Final vote prioritization (descending).")
-final_options = (eliminated_options + available_options)[::-1]
+    final_options = (eliminated_options + available_options)[::-1]
 st.table([options_set[i] for i in final_options])    
         
 # Text feeds
