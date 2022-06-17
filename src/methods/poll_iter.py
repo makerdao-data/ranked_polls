@@ -76,17 +76,11 @@ def poll_iter(poll_metadata: list, poll_results: list) -> Tuple[pd.DataFrame]:
                     # Exit loop
                     break
 
-        # override the 'abstain' option. Currently disabled.
-        # for voter, user_choices, dapproval in poll_results:
-        #     if len(user_choices.split(',')) == 1 and user_choices.split(',')[0] == '0':
-        #         df.at[df.index[df['voter'] == voter][0], category] = options_set['0']
-
         # Create list of ordered results
         ordered_results = [option for option in sorted(final_results[pointer].values())]
 
-        # Iterate through final results
+        # Iterate through final results and update available/eliminated poll lists
         for option in final_results[pointer]:
-            # What exactly is this code block doing?
             if final_results[pointer][option] == ordered_results[0]:
                 if pointer < (len(options_set) - 1):
                     eliminated_options.append(option)
