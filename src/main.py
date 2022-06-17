@@ -62,7 +62,7 @@ def main():
 
         # Final vote prioritization table
         st.write("Final vote prioritization (descending).")
-        st.table(poll_options_df)    
+        st.table(poll_options_df.astype(str))    
                 
         # Footer text feeds
         st.caption("""
