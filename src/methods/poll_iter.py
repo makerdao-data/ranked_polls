@@ -113,8 +113,8 @@ def poll_iter(poll_metadata: list, poll_results: list) -> Tuple[pd.DataFrame]:
         return "<br>".join(textwrap.wrap(s,width=width))
     
     def trimstr(s, width=50):
-        if len(s) > 49:
-            return s[:50] + '...'
+        if len(str(s)) > 49:
+            return str(s)[:50] + '...'
         else:
             return s
 
