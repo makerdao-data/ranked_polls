@@ -1,1 +1,1 @@
-web: sh setup.sh && streamlit run ranked_algo.py
+web: sh setup.sh && streamlit run src/main.py

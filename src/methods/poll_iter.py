@@ -4,6 +4,8 @@ from streamlit import cache
 from numpy import nan
 from typing import Tuple
 from objects.errors import EmptyPollError, NegativeDapprovalError
+import textwrap
+
 
 def poll_iter(poll_metadata: list, poll_results: list) -> Tuple[pd.DataFrame]:
     """
@@ -105,6 +107,18 @@ def poll_iter(poll_metadata: list, poll_results: list) -> Tuple[pd.DataFrame]:
         ).reset_index(
             drop=True
     )
+
+    # func currently not in use
+    def customwrap(s,width=50):
+        return "<br>".join(textwrap.wrap(s,width=width))
+    
+    def trimstr(s, width=50):
+        if len(str(s)) > 49:
+            return str(s)[:50] + '...'
+        else:
+            return s
+
+    df['Round 1'] = df['Round 1'].map(trimstr)
 
     # Get final options and place into dataframe
     final_options = (eliminated_options + available_options)[::-1]

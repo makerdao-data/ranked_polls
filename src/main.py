@@ -1,18 +1,22 @@
 import os
 from numpy import float64
 import streamlit as st
-import plotly.express as px
-import plotly.graph_objects as go
 from objects.errors import EmptyPollError, NegativeDapprovalError
 from methods.conn_init import load_connection
 from methods.poll_data import fetch_poll_data, fetch_poll_list
 from methods.poll_iter import poll_iter
+from methods.viz_gen import viz_gen
 
 
 def main():
     """
     Main streamlit app
     """
+    # Configure page layout and display basic intro
+    st.set_page_config(page_title="MakerDAO Ranked Poll Simulation", layout="wide")
+    st.title("MakerDAO Ranked Poll Simulation")
+    st.write("This app simulates the Instant Runoff Voting algorithm for ranked polls, showing how choices compete against each other.\nThe intent is to help voters when ranking choices in Priotization Sentiment polls.")
+
 
     # State management for cursor and ranked poll objects
     if 'cur' not in st.session_state:
@@ -21,12 +25,7 @@ def main():
         st.session_state.cur = load_connection()
     if 'ranked_polls' not in st.session_state:
         st.session_state.ranked_polls = fetch_poll_list()
-
-    # Configure page layout and display basic intro
-    st.set_page_config(layout="wide")
-    st.title("Ranked Poll Simulation")
-    st.write("This app simulates the Instant Runoff Voting algorithm for ranked polls, showing how choices compete against each other.\nThe intent is to help voters when ranking choices in Priotization Sentiment polls.")
-
+    
     # Render select box for poll options and display selected poll
     option = st.selectbox('Select a poll',st.session_state.ranked_polls.keys())
     st.write("Selected poll:", st.session_state.ranked_polls[option])
@@ -44,21 +43,14 @@ def main():
 
     # Continue if the poll results were successfully obtained
     if 'poll_result_df' in locals():
-        
-        # Create visualization dimensions
-        dims = [go.parcats.Dimension(values=poll_result_df[dim], label=dim) for dim in poll_result_df[poll_result_df.columns[2:]]]
 
         # Create figure
-        fig = go.Figure(
-            data = [go.Parcats(
-                dimensions=dims,
-                line={'color': poll_result_df.power, 'colorscale': px.colors.sequential.Burgyl, 'shape':'hspline'},
-                counts=[float64(i) for i in poll_result_df.power],
-                hoveron='dimension',)]
-            )
+        fig = viz_gen(poll_result_df)
 
         # Display 'fig' plotly chart
         st.plotly_chart(fig, use_container_width=True)
+
+        st.caption("**Count:** total MKR support, **Discarded votes:** votes with all their ranked options eliminated")
 
         # Final vote prioritization table
         st.write("Final vote prioritization (descending).")
