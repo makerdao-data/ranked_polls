@@ -12,6 +12,11 @@ def main():
     """
     Main streamlit app
     """
+    # Configure page layout and display basic intro
+    st.set_page_config(page_title="MakerDAO Ranked Poll Simulation", layout="wide")
+    st.title("MakerDAO Ranked Poll Simulation")
+    st.write("This app simulates the Instant Runoff Voting algorithm for ranked polls, showing how choices compete against each other.\nThe intent is to help voters when ranking choices in Priotization Sentiment polls.")
+
 
     # State management for cursor and ranked poll objects
     if 'cur' not in st.session_state:
@@ -20,12 +25,7 @@ def main():
         st.session_state.cur = load_connection()
     if 'ranked_polls' not in st.session_state:
         st.session_state.ranked_polls = fetch_poll_list()
-
-    # Configure page layout and display basic intro
-    st.set_page_config(layout="wide")
-    st.title("Ranked Poll Simulation")
-    st.write("This app simulates the Instant Runoff Voting algorithm for ranked polls, showing how choices compete against each other.\nThe intent is to help voters when ranking choices in Priotization Sentiment polls.")
-
+    
     # Render select box for poll options and display selected poll
     option = st.selectbox('Select a poll',st.session_state.ranked_polls.keys())
     st.write("Selected poll:", st.session_state.ranked_polls[option])
