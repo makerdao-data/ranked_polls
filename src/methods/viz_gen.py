@@ -19,5 +19,16 @@ def viz_gen(poll_result_df: pd.DataFrame) -> go.Figure:
             counts=[float64(i) for i in poll_result_df.power],
             hoveron='dimension',)]
         )
+    
+    fig.update_layout(
+        autosize=False,
+        margin=dict(
+            l=200,
+            r=200,
+            b=100,
+            t=100,
+            pad=4
+        ),
+    )
 
     return fig
