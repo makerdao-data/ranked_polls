@@ -1,12 +1,11 @@
 import os
 from numpy import float64
 import streamlit as st
-import plotly.express as px
-import plotly.graph_objects as go
 from objects.errors import EmptyPollError, NegativeDapprovalError
 from methods.conn_init import load_connection
 from methods.poll_data import fetch_poll_data, fetch_poll_list
 from methods.poll_iter import poll_iter
+from methods.viz_gen import viz_gen
 
 
 def main():
@@ -44,18 +43,9 @@ def main():
 
     # Continue if the poll results were successfully obtained
     if 'poll_result_df' in locals():
-        
-        # Create visualization dimensions
-        dims = [go.parcats.Dimension(values=poll_result_df[dim], label=dim) for dim in poll_result_df[poll_result_df.columns[2:]]]
 
         # Create figure
-        fig = go.Figure(
-            data = [go.Parcats(
-                dimensions=dims,
-                line={'color': poll_result_df.power, 'colorscale': px.colors.sequential.Burgyl, 'shape':'hspline'},
-                counts=[float64(i) for i in poll_result_df.power],
-                hoveron='dimension',)]
-            )
+        fig = viz_gen(poll_result_df)
 
         # Display 'fig' plotly chart
         st.plotly_chart(fig, use_container_width=True)
