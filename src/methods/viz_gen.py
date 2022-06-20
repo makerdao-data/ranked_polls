@@ -25,7 +25,7 @@ def viz_gen(poll_result_df: pd.DataFrame) -> go.Figure:
         margin=dict(
             l=200,
             r=200,
-            b=100,
+            b=25,
             t=100,
             pad=4
         ),

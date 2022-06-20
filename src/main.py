@@ -50,6 +50,8 @@ def main():
         # Display 'fig' plotly chart
         st.plotly_chart(fig, use_container_width=True)
 
+        st.caption("**Count:** total MKR support, **Discarded votes:** votes with all their ranked options eliminated")
+
         # Final vote prioritization table
         st.write("Final vote prioritization (descending).")
         st.table(poll_options_df.astype(str))    
