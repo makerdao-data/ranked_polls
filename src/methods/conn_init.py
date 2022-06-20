@@ -21,6 +21,7 @@ def load_connection() -> snowflake.connector.cursor.SnowflakeCursor:
 
     # Create a cursor object.
     cur = conn.cursor()
-    cur.execute("USE ROLE ETL")
+    cur.execute("USE WAREHOUSE WEB_RANKED_POLLS")
+    cur.execute("USE ROLE WEB_RANKED_POLLS")
 
     return cur

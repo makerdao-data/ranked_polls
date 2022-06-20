@@ -22,7 +22,7 @@ def fetch_poll_list() -> Dict[str, str]:
     # Iterate through polls and populate aforementioned dict
     for poll in polls:
         if poll['voteType'] == 'Ranked Choice IRV':
-            ranked_polls[poll['title']] = poll['pollId']
+            ranked_polls[str(poll['pollId']) + ' : ' + poll['title']] = poll['pollId']
 
     # Sort dictionary items by pollId
     ranked_polls = dict(sorted(ranked_polls.items(), key=lambda item: item[1], reverse=True))
@@ -45,9 +45,11 @@ def fetch_poll_data(cur, option: int) -> Tuple[List[Tuple[Any]]]:
 
     # Fetch polling results
     poll_results = cur.execute(f"""
-        select distinct voter, option, last_value(dapproval) over (partition by voter order by timestamp) as dapproval
-        from mcd.public.votes 
-        where yay = '{option}';
+        select distinct x.voter, last_value(x.option) over (partition by x.voter order by x.timestamp) as option, y.dapproval
+        from mcd.public.votes x, (select v.voter, round(sum(v.dstake), 3) dapproval from mcd.public.votes v group by v.voter) y
+        where x.yay = '{option}' and
+        x.operation = 'CHOOSE' and
+        x.voter = y.voter;
     """).fetchall()
 
     return (poll_metadata, poll_results)
