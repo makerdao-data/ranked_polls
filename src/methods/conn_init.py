@@ -1,7 +1,9 @@
 from dotenv import load_dotenv
 import snowflake.connector
+import streamlit as st
 import os
 
+@st.experimental_singleton
 def load_connection() -> snowflake.connector.cursor.SnowflakeCursor:
     """
     Function to generate snowflake connection

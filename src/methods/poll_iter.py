@@ -107,22 +107,26 @@ def poll_iter(poll_metadata: list, poll_results: list) -> Tuple[pd.DataFrame]:
         ).reset_index(
             drop=True
     )
-
-    # func currently not in use
-    def customwrap(s,width=50):
-        return "<br>".join(textwrap.wrap(s,width=width))
-    
-    def trimstr(s, width=50):
-        if len(str(s)) > 49:
-            return str(s)[:50] + '...'
-        else:
-            return s
-
     df['Round 1'] = df['Round 1'].map(trimstr)
 
     # Get final options and place into dataframe
     final_options = (eliminated_options + available_options)[::-1]
-    df_options = pd.DataFrame([options_set[i] for i in final_options][1:], columns=["Option"])
+    df_options = pd.DataFrame([options_set[i] for i in final_options][1:], columns=["Final option preference (descending)"])
     df_options.index += 1 
 
     return (df, df_options)
+
+
+def trimstr(s: str) -> str:
+    """
+    Function to shorten string with elipsis
+    """
+
+    if len(str(s)) > 49:
+        return str(s)[:50] + '...'
+    else:
+        return s
+
+# func currently not in use
+# def customwrap(s,width=50):
+#     return "<br>".join(textwrap.wrap(s,width=width))

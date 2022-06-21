@@ -1,8 +1,9 @@
 import json
 import requests
-from streamlit import cache
+import streamlit as st
 from typing import Any, Dict, List, Tuple
 
+@st.experimental_singleton
 def fetch_poll_list() -> Dict[str, str]:
     """
     Fetch list of polls
@@ -29,14 +30,14 @@ def fetch_poll_list() -> Dict[str, str]:
 
     return ranked_polls
 
-
-def fetch_poll_data(cur, option: int) -> Tuple[List[Tuple[Any]]]:
+@st.experimental_memo(show_spinner=False)
+def fetch_poll_data(_cur, option: int) -> Tuple[List[Tuple[Any]]]:
     """
     Fetch necessary poll data
     """
     
     # Fetch poll metadata
-    poll_metadata = cur.execute(f"""
+    poll_metadata = _cur.execute(f"""
         select code, parse_json(options)::string as options
         from mcd.internal.yays
         where type = 'poll'
@@ -44,7 +45,7 @@ def fetch_poll_data(cur, option: int) -> Tuple[List[Tuple[Any]]]:
     """).fetchall()
 
     # Fetch polling results
-    poll_results = cur.execute(f"""
+    poll_results = _cur.execute(f"""
         select distinct x.voter, last_value(x.option) over (partition by x.voter order by x.timestamp) as option, y.dapproval
         from mcd.public.votes x, (select v.voter, round(sum(v.dstake), 3) dapproval from mcd.public.votes v group by v.voter) y
         where x.yay = '{option}' and
