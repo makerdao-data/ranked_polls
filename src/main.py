@@ -58,7 +58,7 @@ def main():
                 poll_results.append(
                     (
                         '0x0000000000000000000000000000000000',
-                        ','.join(list(map(str, list(range(1, len(sim_selections) + 1))))),
+                        ','.join([list(sim_options.keys())[list(sim_options.values()).index(i)] for i in sim_selections]),
                         selection_weight
                     )
                 )
