@@ -3,7 +3,7 @@ import snowflake.connector
 import streamlit as st
 import os
 
-@st.experimental_singleton
+@st.experimental_singleton(show_spinner=False)
 def load_connection() -> snowflake.connector.cursor.SnowflakeCursor:
     """
     Function to generate snowflake connection

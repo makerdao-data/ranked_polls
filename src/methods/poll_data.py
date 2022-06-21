@@ -3,7 +3,7 @@ import requests
 import streamlit as st
 from typing import Any, Dict, List, Tuple
 
-@st.experimental_singleton
+@st.experimental_singleton(show_spinner=False)
 def fetch_poll_list() -> Dict[str, str]:
     """
     Fetch list of polls
