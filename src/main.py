@@ -18,11 +18,11 @@ def main():
     st.set_page_config(page_title="MakerDAO Ranked Poll Simulation", layout="wide")
     st.title("MakerDAO Ranked Poll Simulation")
     st.write("""
-        This app simulates the Instant Run-off Voting (IRV) algorithm for on-chain ranked polls. 
-        Voters rank options in order of preference. In every round, MKR support for each voter's top option is aggregated. The option with the least amount of MKR support is eliminated. 
-        The voters who selected the eliminated option as a firt choice have their voters transfered to their next preference. If the voter did not select any further prefered option, their votes are discarded. 
-        This process is repeated ("rounds") until one option remains. The official winning condition also includes "Stop on Total Majority", but for the sake of informational purposes we have excluded it. This should not have any impact on the winning option selection. 
-        The main intent of this app is to help voters when ranking choices in Priotization Sentiment polls. However, as this simulation is equally applicable to other ranked polls we have decided to allow for the expanded scope while we gather community feedback and improve the app.
+        This app simulates the Instant Run-off Voting (IRV) algorithm for on-chain ranked polls.
+        \nVoters rank options in order of preference. In every round, MKR support for each voter's top option is aggregated. The option with the least amount of MKR support is eliminated.
+        \nThe voters who selected the eliminated option as a first choice have their voters transferred to their next preference. If the voter did not select any further preferred option, their votes are discarded.
+        \nThis process is repeated ("rounds") until one option remains. The official winning condition also includes "Stop on Total Majority", but for the sake of informational purposes we have excluded it from the simulation. This should not have any impact on the winning option selection while it may affect the final preference of the eliminated options. Additionally, we currently consider Abstain as a normal option while officially it is excluded from the IRV process.
+        \nThe main intent of this app is to help voters when ranking choices in Prioritization Sentiment polls. However, as this simulation is equally applicable to other ranked polls we have decided to allow for the expanded scope while we gather community feedback and improve the app.
     """)
 
     # State management for cursor and ranked poll objects
