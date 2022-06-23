@@ -110,9 +110,14 @@ def poll_iter(poll_metadata: list, poll_results: list) -> Tuple[pd.DataFrame]:
     df['Round 1'] = df['Round 1'].map(trimstr)
 
     # Get final options and place into dataframe
-    final_options = (eliminated_options + available_options)[::-1]
-    df_options = pd.DataFrame([options_set[i] for i in final_options][1:], columns=["Final option preference (descending)"])
-    df_options.index += 1 
+    final_options = (eliminated_options + [available_options[0]])[::-1]
+    print(available_options)
+    print(eliminated_options)
+    print(final_options)
+    df_options = pd.DataFrame([options_set[i] for i in final_options], columns=["Final option preference (descending)"])
+    df_options.index += 1
+
+    print(df_options)
 
     return (df, df_options)
 

@@ -17,8 +17,13 @@ def main():
     # Configure page layout and display basic intro
     st.set_page_config(page_title="MakerDAO Ranked Poll Simulation", layout="wide")
     st.title("MakerDAO Ranked Poll Simulation")
-    st.write("This app simulates the Instant Runoff Voting algorithm for ranked polls, showing how choices compete against each other.\nThe intent is to help voters when ranking choices in Priotization Sentiment polls.")
-
+    st.write("""
+        This app simulates the Instant Run-off Voting (IRV) algorithm for on-chain ranked polls. 
+        Voters rank options in order of preference. In every round, MKR support for each voter's top option is aggregated. The option with the least amount of MKR support is eliminated. 
+        The voters who selected the eliminated option as a firt choice have their voters transfered to their next preference. If the voter did not select any further prefered option, their votes are discarded. 
+        This process is repeated ("rounds") until one option remains. The official winning condition also includes "Stop on Total Majority", but for the sake of informational purposes we have excluded it. This should not have any impact on the winning option selection. 
+        The main intent of this app is to help voters when ranking choices in Priotization Sentiment polls. However, as this simulation is equally applicable to other ranked polls we have decided to allow for the expanded scope while we gather community feedback and improve the app.
+    """)
 
     # State management for cursor and ranked poll objects
     if 'cur' not in st.session_state:
@@ -49,7 +54,7 @@ def main():
                 sim_options.values()
             )
             selection_weight = st.number_input(
-                "Input option MKR support.",
+                "Input MKR support.",
                 max_value=100000
             )
             # Ensure inputs have been supplied
@@ -83,7 +88,7 @@ def main():
         # Create figure and display 'fig' plotly chart
         fig = viz_gen(poll_result_df)
         st.plotly_chart(fig, use_container_width=True)
-        st.caption("**Count:** total MKR support, **Discarded votes:** votes with all their ranked options eliminated")
+        st.caption("**Count:** total MKR support. **Discarded votes:** votes with all their prefered options eliminated.")
 
         # Final vote prioritization table
         st.table(poll_options_df.astype(str))    
