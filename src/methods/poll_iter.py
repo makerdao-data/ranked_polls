@@ -113,16 +113,13 @@ def poll_iter(poll_metadata: list, poll_results: list) -> Tuple[pd.DataFrame]:
     if len(available_options) != 0:
         if available_options[0] not in eliminated_options:
             final_options = (eliminated_options + [available_options[0]])[::-1]
+        else:
+            final_options = eliminated_options[::-1]
     else:
         final_options = eliminated_options[::-1]
 
     df_options = pd.DataFrame([options_set[i] for i in final_options], columns=["Final option preference (descending)"])
     df_options.index += 1
-
-    print()
-    print(df)
-    print()
-    print(df_options)
 
     return (df, df_options)
 
