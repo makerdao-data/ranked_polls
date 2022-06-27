@@ -29,7 +29,7 @@ def main():
     # State management for cursor and ranked poll objects
     if 'cur' not in st.session_state:
         st.session_state.cur = load_connection()
-    elif st.session_state.cur.is_closed():
+    if st.session_state.cur.is_closed():
         st.session_state.cur = load_connection()
     if 'ranked_polls' not in st.session_state:
         st.session_state.ranked_polls = fetch_poll_list()
