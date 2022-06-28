@@ -22,7 +22,7 @@ def fetch_poll_list() -> Dict[str, str]:
     
     # Iterate through polls and populate aforementioned dict
     for poll in polls:
-        if poll['voteType'] == 'Ranked Choice IRV':
+        if poll['parameters']['inputFormat'] == 'rank-free':
             ranked_polls[str(poll['pollId']) + ' : ' + poll['title']] = poll['pollId']
 
     # Sort dictionary items by pollId
