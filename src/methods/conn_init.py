@@ -22,5 +22,7 @@ def load_connection() -> snowflake.connector.cursor.SnowflakeCursor:
 
     # Create a cursor object.
     cur = conn.cursor()
+    cur.execute(f"""USE WAREHOUSE {os.getenv("SNOWFLAKE_WAREHOUSE")}""")
+    cur.execute(f"""USE ROLE {os.getenv("SNOWFLAKE_ROLE")}""")
 
     return cur
