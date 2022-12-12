@@ -10,7 +10,7 @@ def fetch_poll_list() -> Dict[str, str]:
     """
     
     # Get ranked_polls from GovAlpha/DUX
-    url = "https://governance-portal-v2.vercel.app/api/polling/all-polls"
+    url = "https://vote.makerdao.com/api/polling/all-polls"
     r = requests.get(url)
 
     # Fit into a json object
